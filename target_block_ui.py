@@ -60,11 +60,6 @@ if (baseAddr) {
                     let posY = rbx.add(0x28).readFloat();
                     let posZ = rbx.add(0x2C).readFloat();
                     
-                    let playerFloats = [];
-                    for(let i=0; i<24; i++) {
-                        try { playerFloats.push(rbx.add(i*4).readFloat()); } catch(e) { playerFloats.push(0); }
-                    }
-                    
                     let pitchRad = rbx.add(0x3C).readFloat();
                     let yawRad = rbx.add(0x40).readFloat();
                     let pitchDeg = pitchRad * (180.0 / Math.PI);
@@ -74,7 +69,7 @@ if (baseAddr) {
                         t: 'pos', 
                         px: Math.floor(posX), py: Math.floor(posY), pz: Math.floor(posZ),
                         pitch: pitchDeg, yaw: yawDeg,
-                        tid: 0, floats: playerFloats
+                        tid: 0, floats: []
                     });
                 }
             } catch (e) {}
@@ -137,14 +132,6 @@ class TargetBlockUI(QMainWindow):
         self.lbl_orient.setStyleSheet("color: #00ff66; font-family: 'Consolas'; font-size: 20px; font-weight: bold; border: none; background: transparent;")
         self.lbl_orient.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(self.lbl_orient)
-        
-        self.lbl_debug_player = QLabel("")
-        self.lbl_debug_player.setStyleSheet("color: #00ffff; font-family: 'Consolas'; font-size: 11px; border: none; background: transparent;")
-        layout.addWidget(self.lbl_debug_player)
-        
-        self.lbl_debug_target = QLabel("")
-        self.lbl_debug_target.setStyleSheet("color: #ffaa00; font-family: 'Consolas'; font-size: 11px; border: none; background: transparent;")
-        layout.addWidget(self.lbl_debug_target)
 
     # Allow dragging the frameless window around the screen
     def mousePressEvent(self, event):
@@ -167,19 +154,12 @@ class TargetBlockUI(QMainWindow):
     def update_pos(self, px, py, pz, tid, p_floats, pitch, yaw):
         self.lbl_pos.setText(f"Position: ({px}, {py}, {pz})")
         self.lbl_orient.setText(f"Orientation: ({pitch:.1f}°, {yaw:.1f}°, 0.0°)")
-        
-        lines = []
-        for i in range(0, len(p_floats), 4):
-            chunk = p_floats[i:i+4]
-            lines.append(" | ".join([f"+{(i+j)*4:02X}: {v:8.2f}" for j, v in enumerate(chunk)]))
-        self.lbl_debug_player.setText("Player Floats:\n" + "\n".join(lines))
 
     def update_target(self, tx, ty, tz, tid, t_ints):
         self.last_tx = tx
         self.last_ty = ty
         self.last_tz = tz
         self.lbl_target.setText(f"Target Block: ({tx}, {ty}, {tz})")
-        self.lbl_debug_target.setText("")
 
     def run_frida(self):
         self.bridge.log_signal.emit("Searching for HytaleClient.exe...")
